@@ -1,0 +1,6 @@
+easyocr==1.6.2
+numpy==1.21.2
+Pillow==9.3.0
+streamlit==1.14.0
+torch
+transformers==4.24.0

@@ -1,11 +1,15 @@
 import io
+import os
+from time import time
 
 import streamlit as st
+import numpy as np
 import torch
 import torch.nn as nn
 import clip
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from PIL import Image
+import easyocr
 
 from utils import ImageEmbeder, TextEmbeder, SATextEmbeder
 
@@ -54,29 +58,43 @@ image_embeder = ImageEmbeder(clip_model, clip_preprocess)
 text_embeder = TextEmbeder(clip_model)
 sa_embeder = SATextEmbeder(sa_model, sa_tokenizer)
 
-def inference(img, text):
+reader = easyocr.Reader(['en']) 
+
+IMAGES_PATH = "images/"
+
+def get_random_image():
+    images = os.listdir(IMAGES_PATH)
+    n = len(images)
+    ind = np.random.randint(low=0, high=n)
+    return Image.open(IMAGES_PATH + images[ind])
+
+def get_text_from_image(image):
+    result = reader.readtext(np.array(image))
+    texts = [item[-2] for item in result]
+    return ' '.join(texts)
+
+def inference(img):
+    start = time()
+    text = get_text_from_image(img)
     image_embeding = image_embeder.encode([img])
     text_embeding = text_embeder.encode([text])
     sa_embeding = sa_embeder.encode([text])
     with torch.no_grad():
         output = model(image_embeding, text_embeding, sa_embeding)
     result = int(output.argmax())
+    finish = time()
+    print("Inference took {} seconds".format(finish - start))
     return "This meme is considered as toxic" if result else "This meme is considered as NOT toxic"
 
 
 
-st.text_input("Type the text of a meme", key="text")
-uploaded_image_file = st.file_uploader("Upload a meme image")
-image = None
-if uploaded_image_file is not None:
-    image_bytes_data = uploaded_image_file.getvalue()
-    image = Image.open(io.BytesIO(image_bytes_data))
+# uploaded_image_file = st.file_uploader("Upload a meme image")
+# image = None
+# if uploaded_image_file is not None:
+#     image_bytes_data = uploaded_image_file.getvalue()
+#     image = Image.open(io.BytesIO(image_bytes_data))
 
-if st.button('Toxic or not?'):
-    if image is None:
-        st.write("Please upload a meme image file")
-    elif st.session_state.text == '':
-        st.write("Please type a meme text")
-    else:
-        st.image(image, caption=inference(image, st.session_state.text))
+if st.button('Get random image and predict if it is toxic'):
+    image = get_random_image()
+    st.image(image, caption=inference(image))
             
