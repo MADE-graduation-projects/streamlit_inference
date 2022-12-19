@@ -47,9 +47,11 @@ class NNModel(nn.Module):
     
 # Loading models
 clip_model, clip_preprocess = clip.load("ViT-L/14", device="cpu")
+print("Loaded CLIP model")
 sa_tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
 sa_model = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment",
                                                            output_hidden_states=True)
+print("Loaded Sentiment model")
 model = NNModel(768, 768, 3, hidden_layer_size=256, dropout=0.66, num_classes=2)
 model.load_state_dict(torch.load('clip_image_clip_text_sa_features_classifier_9_0.678.ckpt'))
 model.eval()
@@ -59,6 +61,7 @@ text_embeder = TextEmbeder(clip_model)
 sa_embeder = SATextEmbeder(sa_model, sa_tokenizer)
 
 reader = easyocr.Reader(['en']) 
+print("Loaded EasyOCR model")
 
 IMAGES_PATH = "images/"
 
